@@ -80,3 +80,11 @@ IEEE 원본을 받아 `python tools/build_oui.py oui.csv mam.csv oui36.csv` 실�
 ## 참고
 - Windows 11 24H2 이후로는 **설정 > 개인 정보 및 보안 > 위치**에서 위치 서비스와 "데스크톱 앱의 위치 액세스 허용"이 켜져 있어야 스캔 목록을 받을 수 있습니다.
 - 서버는 127.0.0.1에만 바인딩되어 외부에서 접근할 수 없습니다.
+
+## 자동 빌드 (GitHub Actions)
+
+`.github/workflows/build.yml` 이 push·PR 때마다 macOS(`build_mac.sh`)와 Windows(`build.bat`) 빌드를 실행합니다.
+
+- 결과물: Actions 실행 화면의 **Artifacts** 에서 `WiFiScanner-mac`(WiFiScanner-mac.zip), `WiFiScanner-windows`(WiFiScanner.exe) 다운로드
+- 릴리스: `git tag v1.0.0 && git push origin v1.0.0` 처럼 `v`로 시작하는 태그를 push하면 두 파일이 GitHub Release에 첨부됩니다.
+- macOS 앱은 ad-hoc 서명이라 처음 실행 시 Finder에서 우클릭 → 열기 로 실행해야 할 수 있습니다.
