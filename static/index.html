@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WI-FI SCANNER</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand">📶 WI-FI SCANNER</div>
+  <nav class="tabs" id="viewTabs">
+    <button data-view="viewNetworks" class="on">네트워크</button>
+    <button data-view="viewAnalysis">채널 분석</button>
+  </nav>
+  <div id="iface" class="muted">어댑터 확인 중…</div>
+  <div id="conn"></div>
+  <div class="spacer"></div>
+  <div id="status" class="muted"></div>
+  <select id="themeSel" title="화면 테마">
+    <option value="system">🖥 시스템 설정</option>
+    <option value="light">☀ 라이트</option>
+    <option value="dark">🌙 다크</option>
+  </select>
+  <button id="pause" title="화면 갱신 일시정지">⏸ 일시정지</button>
+</header>
+
+<div id="error" hidden></div>
+
+<main id="viewNetworks" class="view">
+<section class="toolbar">
+  <div class="chips" id="bandChips">
+    <button data-band="all" class="on">전체</button>
+    <button data-band="2.4">2.4 GHz</button>
+    <button data-band="5">5 GHz</button>
+    <button data-band="6">6 GHz</button>
+  </div>
+  <input id="search" type="search" placeholder="SSID / BSSID / 제조사 / 보안 검색">
+  <label class="chk"><input type="checkbox" id="hideHidden"> 숨김 SSID 제외</label>
+  <label class="chk"><input type="checkbox" id="hideStale" checked> 사라진 AP 제외</label>
+  <button id="clearSel" hidden>선택 해제</button>
+  <span id="count" class="muted"></span>
+  <div class="spacer"></div>
+  <button id="resetCols" title="열 순서와 너비를 기본값으로">↺ 열 초기화</button>
+  <button id="exportCsv" title="현재 표에 보이는 목록을 CSV(엑셀)로 저장">⬇ CSV 저장</button>
+</section>
+<div id="toast" hidden></div>
+<div id="dropIndicator"></div>
+
+<section class="tablewrap">
+  <table id="nets">
+    <colgroup></colgroup>
+    <thead><tr></tr></thead>
+    <tbody></tbody>
+  </table>
+</section>
+
+<div class="hsplit" id="graphSplit" title="위아래로 드래그: 그래프 높이 조절 · 더블클릭: 기본 높이"></div>
+
+<section class="graphs">
+  <div class="panel">
+    <div class="panel-head">
+      <span>시간별 신호 세기</span>
+      <div class="chips small" id="timeChips">
+        <button data-sec="60">1분</button>
+        <button data-sec="300" class="on">5분</button>
+        <button data-sec="600">10분</button>
+      </div>
+    </div>
+    <canvas id="timeGraph"></canvas>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>채널 점유</span>
+      <div class="chips small" id="chanChips">
+        <button data-band="2.4" class="on">2.4 GHz</button>
+        <button data-band="5">5 GHz</button>
+        <button data-band="6">6 GHz</button>
+      </div>
+    </div>
+    <canvas id="chanGraph"></canvas>
+  </div>
+</section>
+</main>
+
+<main id="viewAnalysis" class="view" hidden>
+<section class="toolbar">
+  <label class="chk"><input type="checkbox" id="exMine" checked> 내 AP(연결된 장비) 제외</label>
+  <label class="chk">5 / 6 GHz 채널 폭
+    <select id="anaWidth">
+      <option value="20">20 MHz</option>
+      <option value="40">40 MHz</option>
+      <option value="80" selected>80 MHz</option>
+      <option value="160">160 MHz</option>
+    </select>
+  </label>
+  <label class="chk"><input type="checkbox" id="incDfs"> DFS 채널(52–144)도 추천</label>
+  <div class="spacer"></div>
+  <span class="muted">최근 60초 평균 신호 기준 · 채널이 겹치는 AP의 신호를 겹친 비율만큼 합산</span>
+</section>
+<section class="cards" id="anaCards"></section>
+<section class="anaPanels">
+  <div class="panel"><div class="panel-head"><span>2.4 GHz 채널별 간섭</span><span class="muted small">추천 후보: 1 · 6 · 11 (겹치지 않는 채널)</span></div><canvas id="ana24"></canvas></div>
+  <div class="panel"><div class="panel-head"><span>5 GHz 채널별 간섭</span><span class="muted small" id="ana5note"></span></div><canvas id="ana5"></canvas></div>
+  <div class="panel"><div class="panel-head"><span>6 GHz 채널별 간섭</span><span class="muted small" id="ana6note"></span></div><canvas id="ana6"></canvas></div>
+</section>
+<section class="legend muted">
+  <span><i style="background:var(--good)"></i>좋음 (≤ −85 dBm)</span>
+  <span><i style="background:var(--ok)"></i>양호 (≤ −75)</span>
+  <span><i style="background:var(--weak)"></i>혼잡 (≤ −65)</span>
+  <span><i style="background:var(--bad)"></i>매우 혼잡 (&gt; −65)</span>
+  <span>막대 위 숫자 = 겹치는 AP 수 · 흰 테두리 = 추천 · ▲ = 현재 연결 채널</span>
+</section>
+</main>
+
+<main id="viewGroup" class="view" hidden>
+  <nav class="crumbs">
+    <button class="back" data-nav="list" title="뒤로 (Esc)">←</button>
+    <a data-nav="list">네트워크</a><span class="sep">›</span><span id="gTitle" class="cur"></span>
+  </nav>
+  <section class="tablewrap auto">
+    <table id="gTable" class="simple">
+      <thead><tr>
+        <th>AP (무선)</th><th>BSSID</th><th class="num">신호</th><th class="num">단말</th><th class="num">채널</th>
+        <th class="num">폭</th><th>보안</th><th>모드</th><th class="num">기본 속도</th><th class="num">최대 속도</th><th class="num">확인</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+  <p class="hint muted">행을 클릭하면 해당 AP의 상세 정보를 볼 수 있습니다.</p>
+  <section class="graphs one">
+    <div class="panel">
+      <div class="panel-head"><span>신호 세기</span>
+        <div class="chips small timeSpan"><button data-sec="60">1분</button><button data-sec="300" class="on">5분</button><button data-sec="600">10분</button></div>
+      </div>
+      <canvas id="gGraph"></canvas>
+    </div>
+  </section>
+</main>
+
+<main id="viewAP" class="view" hidden>
+  <nav class="crumbs">
+    <button class="back" data-nav="group" title="뒤로 (Esc)">←</button>
+    <a data-nav="list">네트워크</a><span class="sep">›</span><a data-nav="group" id="aGroup"></a><span class="sep">›</span><span id="aTitle" class="cur"></span>
+  </nav>
+  <section class="apDetail">
+    <aside class="info" id="apInfo"></aside>
+    <div class="panel">
+      <div class="panel-head"><span>신호 세기</span>
+        <div class="chips small timeSpan"><button data-sec="60">1분</button><button data-sec="300" class="on">5분</button><button data-sec="600">10분</button></div>
+      </div>
+      <canvas id="apGraph"></canvas>
+    </div>
+  </section>
+</main>
+
+<script src="app.js"></script>
+<script src="analysis.js"></script>
+<script src="detail.js"></script>
+</body>
+</html>
