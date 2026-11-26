@@ -135,9 +135,10 @@ def parse_rates(ies):
     sup, basic = set(), set()
     for eid in (1, 50):
         for r in ies.get(eid, b""):
-            v = (r & 0x7F) * 0.5
-            if v in (63.5, 63.0) or v == 0:   # BSS membership selector(127/126) 제외
+            # BSS membership selector(121=EHT, 122=HE, 123=SAE-H2E, 124~127=EPD/GLK/VHT/HT)는 속도가 아니다
+            if (r & 0x7F) >= 121 or not r & 0x7F:
                 continue
+            v = (r & 0x7F) * 0.5
             sup.add(v)
             if r & 0x80:
                 basic.add(v)
