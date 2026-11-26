@@ -68,6 +68,14 @@ python server.py
 IEEE 원본을 받아 `python tools/build_oui.py oui.csv mam.csv oui36.csv` 실행 → `data/oui.tsv.gz` 갱신 후 `build.bat`.
 원본: https://standards-oui.ieee.org/oui/oui.csv , /oui28/mam.csv , /oui36/oui36.csv
 
+## 테스트
+실제 무선 장비 없이 목업 IE·가짜 wlanapi.dll·가짜 CoreWLAN으로 파서를 검증합니다. Windows/macOS/Linux 어디서나 실행됩니다.
+
+```
+pip install -r requirements-dev.txt
+python -m pytest -q
+```
+
 ## 구조
 - `app.py` — 데스크톱 앱 진입점 (내부 서버 + WebView2/WKWebView 창, 맥 위치 권한 요청)
 - `make_icon.py` / `build.bat` / `build_mac.sh` — 아이콘 생성(.ico / .iconset), Windows exe·macOS app 빌드
@@ -76,6 +84,7 @@ IEEE 원본을 받아 `python tools/build_oui.py oui.csv mam.csv oui36.csv` 실�
 - `wlan.py` — OS별 스캐너 선택 · `wifi_win.py` — Windows WLAN API(ctypes) · `wifi_mac.py` — macOS CoreWLAN(PyObjC)
 - `server.py` — 백그라운드 스캔 스레드 + `/api/state` JSON + 정적 파일 서버
 - `static/` — UI (HTML/CSS/Canvas JS)
+- `tests/` — pytest 단위 테스트 (`ie_builder.py`: 테스트용 IE 바이트 생성기)
 
 ## 참고
 - Windows 11 24H2 이후로는 **설정 > 개인 정보 및 보안 > 위치**에서 위치 서비스와 "데스크톱 앱의 위치 액세스 허용"이 켜져 있어야 스캔 목록을 받을 수 있습니다.
