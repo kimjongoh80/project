@@ -1,0 +1,75 @@
+name: Build apps
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    name: macOS (.app)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build with build_mac.sh
+        run: bash build_mac.sh
+        env:
+          PYTHON: python
+      - name: Check bundle
+        run: |
+          test -d dist/WiFiScanner.app
+          test -f dist/WiFiScanner-mac.zip
+          codesign --verify --deep dist/WiFiScanner.app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WiFiScanner-mac
+          path: dist/WiFiScanner-mac.zip
+          if-no-files-found: error
+
+  windows:
+    name: Windows (.exe)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build with build.bat
+        shell: cmd
+        # build.bat ends with "pause"; feed it a newline so CI does not wait
+        run: echo.| call build.bat
+      - name: Check exe
+        shell: pwsh
+        run: if (-not (Test-Path dist/WiFiScanner.exe)) { throw "dist/WiFiScanner.exe not found" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WiFiScanner-windows
+          path: dist/WiFiScanner.exe
+          if-no-files-found: error
+
+  release:
+    name: Attach to release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [macos, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/WiFiScanner-mac.zip
+            artifacts/WiFiScanner.exe
+          generate_release_notes: true

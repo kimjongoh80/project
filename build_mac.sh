@@ -3,6 +3,7 @@
 # 사용법: 터미널에서 이 폴더로 이동 후  bash build_mac.sh
 set -euo pipefail
 cd "$(dirname "$0")"
+ROOT="$(pwd)"
 
 echo "== 1/5 Python 가상환경 준비"
 PY=${PYTHON:-python3}
@@ -23,12 +24,12 @@ iconutil -c icns build/mac/WiFiScanner.iconset -o build/mac/WiFiScanner.icns
 echo "== 3/5 앱 번들 빌드 (PyInstaller)"
 python -m PyInstaller --noconfirm --clean --windowed \
   --name WiFiScanner \
-  --icon build/mac/WiFiScanner.icns \
+  --icon "$ROOT/build/mac/WiFiScanner.icns" \
   --osx-bundle-identifier com.wifiscanner.app \
-  --add-data "static:static" --add-data "data:data" \
+  --add-data "$ROOT/static:static" --add-data "$ROOT/data:data" \
   --hidden-import CoreWLAN --hidden-import CoreLocation \
   --distpath dist --workpath build/mac/work --specpath build/mac \
-  app.py
+  "$ROOT/app.py"
 
 echo "== 4/5 Info.plist 설정 (위치 권한 안내 문구, 앱 이름)"
 PLIST="dist/WiFiScanner.app/Contents/Info.plist"
